@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  password  String
+  name      String?
+  role      String    @default("user")
+  createdAt DateTime  @default(now())
+
+  resources           Resource[]
+  resourcePermissions ResourcePermission[]
+}
+
+model Resource {
+  id          String                  @id @default(cuid())
+  type        String  
+  ownerId     String 
+  data        Json
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+
+  owner       User                    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  permissions ResourcePermission[]
+}
+
+model ResourcePermission {
+  id          String        @id @default(cuid())
+  resourceId  String
+  userId      String
+  role        ResourceRole
+
+  resource    Resource      @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([resourceId, userId])
+}
+
+enum ResourceRole {
+  OWNER
+  EDITOR
+  VIEWER
+}
